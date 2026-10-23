@@ -4,8 +4,8 @@ Stiven Chaparro Herrera · Proceso de selección Perxia 2.0 · Periferia IT Grou
 
 Agente conversacional que lee el paquete de una solicitud de compra, lo valida contra los maestros (RC1–RC10), arma la orden de compra como quedaría en SAP, genera la evidencia de aprobación y la crea en un SAP simulado. Las excepciones no se resuelven a la fuerza: se bloquean o se piden confirmar.
 
-- **Link de prueba:** _pendiente del despliegue_ (front en Vercel)
-- **API del agente:** _pendiente del despliegue_ (Worker en Cloudflare)
+- **Link de prueba:** https://reto03-oc-front.vercel.app (front en Vercel)
+- **API del agente:** https://reto03-oc-agente.chaparro.workers.dev (Worker en Cloudflare · estado en [`/api/health`](https://reto03-oc-agente.chaparro.workers.dev/api/health))
 - **Planteamiento de la solución:** [SOLUCION.md](SOLUCION.md)
 
 ## Estructura

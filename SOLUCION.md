@@ -2,7 +2,7 @@
 
 Stiven Chaparro Herrera · Proceso de selección Perxia 2.0 · Periferia IT Group
 
-> Versión 1 · 23 de octubre de 2026. Las secciones marcadas **Pendiente (Claude Code, al final)** se completan con el despliegue final: entorno tecnológico, modelo y costos.
+> Versión 2 · 23 de octubre de 2026. Incluye el despliegue final: agente en https://reto03-oc-agente.chaparro.workers.dev y front en https://reto03-oc-front.vercel.app.
 
 ---
 
@@ -76,7 +76,7 @@ La analista de Compras digita a mano cada OC en SAP y valida "de memoria" que el
 | Pieza                 | Dónde corre                          | Detalle                                                                                                                                                                                                                                            |
 | --------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Front                 | Vercel                               | Next.js 16, React 19 y Tailwind. Chat y panel de la OC. No tiene datos propios: todo sale de la API.                                                                                                                                               |
-| Puente entre dominios | Vercel, ruta `/api/agente/[...ruta]` | Reenvía cada llamada al Worker desde el servidor. El navegador nunca ve la URL con clave ni la clave de acceso, y no hace falta CORS. Corta a 58 s con un error legible.                                                                           |
+| Puente entre dominios | Vercel, ruta `/api/agente/[...ruta]` | Reenvía cada llamada al Worker desde el servidor. El navegador nunca ve la URL con clave ni la clave de acceso, y no hace falta CORS. Corta a 80 s con un error legible (`maxDuration` 90 s); un turno del agente dura como máximo ~55 s.                                                                           |
 | Agente y API          | Cloudflare Workers                   | `agente/src/server/worker.ts`. Los fixtures, el prompt y el conocimiento se embeben al compilar, porque el Worker no tiene sistema de archivos.                                                                                                    |
 | Estado entre turnos   | Durable Object único con SQLite      | Implementa la interfaz `Store`: guarda sesiones, archivos de `out/`, líneas de `log.jsonl` y `control.csv`, y el contador de OC. Una sola instancia serializa las escrituras, así la numeración y la idempotencia son consistentes entre sesiones. |
 | Modelo                | OpenRouter                           | La clave es un secreto del Worker (`wrangler secret put`). Nunca está en el front, en el repositorio ni en los logs.                                                                                                                               |
@@ -85,9 +85,9 @@ La analista de Compras digita a mano cada OC en SAP y valida "de memoria" que el
 
 | Pieza              | Dónde vive                        | Qué contiene                                                                                            |
 | ------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Comportamiento** | `agent/prompt.md`                 | Reglas del agente: no afirmar valores fuera de herramientas, no crear sin confirmación, cómo responder. |
-| **Conocimiento**   | `src/knowledge/ordenes-compra.md` | Matriz de controles, criterios de negocio, datos fijos de la OC, archivos que produce.                  |
-| **Ejecución**      | `src/tools/oc.ts` + `src/domain/` | Lectura, validación, construcción, evidencia y creación. Única fuente de valores.                       |
+| **Comportamiento** | `agente/agent/prompt.md`          | Reglas del agente: no afirmar valores fuera de herramientas, no crear sin confirmación, cómo responder. |
+| **Conocimiento**   | `agente/src/knowledge/ordenes-compra.md` | Matriz de controles, criterios de negocio, datos fijos de la OC, archivos que produce.                  |
+| **Ejecución**      | `agente/src/tools/oc.ts` + `agente/src/domain/` | Lectura, validación, construcción, evidencia y creación. Única fuente de valores.                       |
 
 El system prompt es `prompt.md` + el conocimiento. Cambiar una regla de negocio (por ejemplo, la tolerancia de RC5) toca `src/domain/validacion.ts` y el conocimiento, nunca el servidor.
 
@@ -97,7 +97,7 @@ El system prompt es `prompt.md` + el conocimiento. Cambiar una regla de negocio 
 
 ## 3. Ciclo del agente
 
-`src/agent/ciclo.ts`, una función de ~100 líneas:
+`agente/src/agent/ciclo.ts` (~130 líneas):
 
 1. Agrega el mensaje del usuario al historial de la sesión.
 2. Llama al modelo con el system prompt, el historial y el JSON Schema de las herramientas (generado desde zod con `z.toJSONSchema`, una sola fuente de verdad).
@@ -115,8 +115,10 @@ El system prompt es `prompt.md` + el conocimiento. Cambiar una regla de negocio 
 | `MAX_ITERACIONES`        | 25 por turno      | El agente responde con lo que hizo y pide continuar (CA1).              |
 | `MAX_TOKENS_SESION`      | 300.000           | La sesión se cierra con un mensaje claro.                               |
 | `MAX_TOKENS_DIA`         | 3.000.000         | Tope global: abrir sesiones nuevas no permite gastar la key sin límite. |
-| `LLM_TIMEOUT_MS`         | 45 s por llamada  | Error legible en el chat.                                               |
+| `LLM_TIMEOUT_MS`         | 25 s por llamada  | Error legible en el chat.                                               |
+| `MAX_DURACION_TURNO_MS`  | 30 s por turno    | No se inicia otra llamada al modelo; responde con lo hecho y pide continuar. Peor caso ~55 s, dentro del corte del proxy de Vercel. |
 | `MAX_CARACTERES_MENSAJE` | 4.000             | El mensaje se rechaza.                                                  |
+| `MAX_COSTO_USD`          | 5 USD acumulados  | El chat responde 429 y el agente queda en pausa. Se suma el costo real que informa OpenRouter en cada llamada. |
 
 `ACCESS_KEY` es opcional y protege el link para que nadie gaste la key sin límite.
 
@@ -141,7 +143,30 @@ Los modelos se consumen por **OpenRouter**: una sola key da acceso a varios prov
 
 Criterio de elección: en un flujo de control financiero el error que importa es crear o describir mal una OC, no gastar unos centavos más. Como los valores salen de las herramientas y no del modelo, se puede elegir un modelo económico sin riesgo de montos inventados.
 
-> **Pendiente (Claude Code, al final):** modelo elegido, por qué, precio por millón de tokens en OpenRouter y costo estimado por caso procesado, medido con el despliegue final.
+**Modelo elegido: `anthropic/claude-haiku-5.5`** por OpenRouter, con `temperature: 0`. Cuesta 0,10 USD por millón de tokens de entrada y 0,50 USD por millón de salida (precio de la API de modelos de OpenRouter el 23 de octubre de 2026 [13]).
+
+Por qué este y no otro:
+- **El trabajo difícil no lo hace el modelo.** Las reglas son deterministas y viven en las herramientas. El modelo decide qué herramienta llamar, en qué orden, y redacta. Para eso basta un modelo pequeño que llame herramientas de forma confiable y escriba bien en español.
+- **Probado, no supuesto.** Los 6 casos corren en producción con este modelo y dan el resultado esperado del PRD, incluida la confirmación en dos turnos de `sol-004`, `sol-005` y `sol-006`.
+- **Descartados:** `claude-sonnet-5.5` (2 / 10 USD por millón) cuesta 20 veces más sin mejorar nada que se evalúe, porque los valores no salen del modelo. `gpt-5-mini` (0,25 / 2) y `gemini-3.1-flash-lite` (0,25 / 1,50) cuestan más que Haiku. `deepseek-v4-flash` (0,09 / 0,18) es algo más barato, pero no lo probé con estos casos y no quería arriesgar el comportamiento del ciclo para ahorrar centavos. Cambiar de modelo es la variable `LLM_MODEL`.
+
+**Costo medido por caso en producción** (`tokens.costo_usd_turno`, costo real que devuelve OpenRouter):
+
+| Caso | Turnos | Tokens | Costo |
+|---|---|---|---|
+| `sol-001` creada sin excepciones | 1 | 29.083 | 0,0033 USD |
+| `sol-002` bloqueada (RC1) | 1 | 15.890 | 0,0017 USD |
+| `sol-003` bloqueada (RC2, RC3) | 1 | 16.234 | 0,0018 USD |
+| `sol-004` prompt del PRD + "confirmo" | 2 | 44.214 | ≈ 0,0049 USD |
+| `sol-005` retroactiva + "confirmo" | 2 | 36.981 | 0,0041 USD |
+| `sol-006` IVA derivado + "confirmo" | 2 | 44.104 | 0,0049 USD |
+| Los 6 casos validados en un solo turno | 1 | 56.160 | 0,0069 USD |
+
+El chat muestra el costo de cada turno debajo de la respuesta (por ejemplo, "10.841 tokens · US$ 0.0013" en `sol-002`), así que en la demo se puede verificar en vivo.
+
+**Entre 0,002 y 0,005 USD por caso** (unos 0,0035 USD en promedio). Con 1.000 OC al mes serían unos 3,5 a 5 USD. Casi todo son tokens de entrada: en cada iteración se reenvían el system prompt, los esquemas de las herramientas y el historial. Si el volumen crece, el siguiente ahorro es el *prompt caching* del proveedor, sin tocar el ciclo.
+
+**Tope de gasto en dos capas:** `MAX_COSTO_USD = 5` en el agente, más un límite de crédito de 5 USD en la propia clave de OpenRouter. La segunda capa no depende de mi código.
 
 ---
 
@@ -281,6 +306,19 @@ El agente no lo puede arreglar solo, pero sí lo hace **visible y medible**: cad
 | 7   | **Agente en Cloudflare Workers con un Durable Object para el estado.** | Un servidor Node sin estado (Vercel Functions, Render) guardando la sesión en memoria. | La confirmación y la idempotencia necesitan memoria entre turnos. En una función sin estado, el segundo turno puede caer en otra instancia y perder la pregunta pendiente. El Durable Object es una sola instancia con almacenamiento propio, sin montar una base de datos (que el PRD declara fuera de alcance). |
 | 8   | **Front en Vercel con un proxy en su servidor.**                       | Llamar al Worker directo desde el navegador con CORS.                                  | Si el Worker se protege con `ACCESS_KEY`, la clave tendría que viajar en el navegador. Con el proxy queda en una variable del servidor de Vercel. Costo: un salto de red más por mensaje.                                                                                                                         |
 | 9   | **Front en Next.js con la plantilla del proyecto.**                    | HTML y JS sin compilación en `web/`.                                                   | El despliegue en Vercel y el proxy en el servidor salen de la misma app, y los tipos del contrato se comparten con TypeScript estricto. Costo: un paso de compilación.                                                                                                                                            |
+| 10  | **Fixtures, prompt y conocimiento embebidos en el bundle del Worker** (`scripts/embeber.ts` antes de cada `dev` y `deploy`). | Subirlos a R2 o KV y leerlos en cada turno. | Son de solo lectura y pesan poco (360 KB comprimido el Worker completo). Embebidos no cuestan una llamada de red por lectura y la versión desplegada siempre coincide con el repositorio. Costo: cambiar un fixture exige volver a desplegar. |
+| 11  | **Turno acotado por tiempo (30 s + 25 s de timeout del modelo)** en vez de streaming. | Streaming de eventos al front. | El proxy de Vercel corta a los 80 s. Con el presupuesto, un turno nunca pasa de ~55 s y, si se acerca, el agente responde con lo que alcanzó a hacer y pide continuar. Un turno real de `sol-004` tarda 12 s. Costo: la respuesta llega completa al final, no por partes. |
+
+**Dependencias del agente**
+
+| Dependencia | Para qué | Por qué no otra cosa |
+| --- | --- | --- |
+| `zod` | Argumentos de las herramientas, esquema de la OC, cuerpo de la API y JSON Schema para el modelo (`z.toJSONSchema`) | Obligatoria por el PRD; con la versión 4, el esquema del modelo sale del mismo código que valida. |
+| `pdf-lib` | `aprobacion.pdf` (HU-4, P1) | JavaScript puro: corre igual en Bun y en Workers, sin binarios ni navegador. |
+| `wrangler`, `@cloudflare/workers-types` | Desarrollo local, despliegue y tipos del Worker y del Durable Object | Herramienta oficial de Cloudflare. |
+| `typescript`, `@types/bun` (desarrollo) | `tsc --noEmit` estricto, sin `any`; `bun test` | Bun ejecuta `demo.ts` y los tests en TypeScript sin compilar. |
+
+Sin SDK de OpenRouter ni de agentes: el adaptador es `fetch` (decisión 4).
 
 **Dependencias del front**
 
@@ -318,13 +356,14 @@ El agente no lo puede arreglar solo, pero sí lo hace **visible y medible**: cad
 | HU-6 Errores                   | Hecho           | `{ ok:false, error }` legible; nada lanza; caso inexistente, JSON malformado y argumentos inválidos probados | —                                                               |
 | Front de chat                  | Hecho           | Herramientas visibles, "pensando", confirmación resaltada, archivos descargables                             | Streaming de eventos                                            |
 | Panel de la OC al estilo Fiori | Hecho | Cabecera con estado y etiqueta "Retroactiva", bloqueos como error, confirmaciones como advertencia con los dos valores, derivados como información, posiciones con el origen de cada valor (`trazabilidad.json`), evidencia y barra de acciones al pie. Probado en escritorio, celular y modo oscuro. | Que la analista edite un campo y el agente revalide |
-| Ciclo CA1–CA5                  | Hecho           | 12 tests automáticos con modelo simulado, más una prueba de punta a punta de dos turnos con confirmación     | Repetir con el modelo real en el despliegue final               |
+| Ciclo CA1–CA5                  | Hecho           | 22 tests automáticos con modelo simulado; los 6 casos probados en producción con `claude-haiku-5.5`, incluido el prompt del PRD sobre `sol-004` con confirmación en dos turnos | Streaming de eventos |
 | Bonus módulo                   | Hecho           | `modulo/` generado desde las mismas fuentes                                                                  | —                                                               |
 
 **Verificación:**
 
 - `bun run demo.ts`: los 6 casos, idempotencia y confirmación, sin key.
-- `bun run test`: confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, ruta maliciosa y retroactiva en el control.
+- `bun run test` (22 tests): confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
+- En producción: los 6 casos con el modelo real (sección 4).
 
 ---
 
@@ -365,9 +404,27 @@ Usé **Claude** (Anthropic) como asistente de construcción durante toda la sesi
 **Preocupaciones que no considero reales:**
 
 - _"El modelo va a inventar montos":_ por diseño los montos no pasan por el modelo (decisión 1) y hay un test que lo prueba.
-- _"El costo por token se dispara":_ hay topes por turno, por sesión y por día.
+- _"El costo por token se dispara":_ hay topes por turno, por sesión y por día, un tope de gasto acumulado de 5 USD en el agente y otro en la clave de OpenRouter. Un caso cuesta menos de medio centavo de dólar.
 
-> **Pendiente (Claude Code, al final):** riesgos de plataforma y de costos (límites de los planes de hosting, costo mensual de agente y front).
+**Riesgos de plataforma** (límites del plan gratuito de Cloudflare según su documentación [14][15]):
+
+| Riesgo | Mitigación |
+| --- | --- |
+| Workers Free da **10 ms de CPU** por petición | El turno pasa casi todo el tiempo esperando al modelo, y esa espera no cuenta como CPU. Los 6 casos, con PDF incluido, corrieron en producción sin pasar el límite. Si crece, Workers Paid da 30 s de CPU. |
+| Workers Free permite **50 subpeticiones** por invocación (cada llamada al modelo y al Durable Object cuenta) | Un turno con los 6 casos (20 herramientas) corrió sin error. Para lotes más grandes: agrupar las escrituras en una sola llamada al Durable Object, o pasar a Paid (10.000). |
+| Un solo Durable Object serializa todas las escrituras | Para el volumen de una analista sobra, y es justo lo que mantiene la numeración y la idempotencia. Si escala, un objeto por sociedad. |
+| Límites diarios del plan gratuito: 100.000 peticiones al Worker y al Durable Object, 100.000 filas escritas | Muy por encima del uso real. Al pasarlos, la operación falla hasta las 00:00 UTC. |
+| El proxy de Vercel corta a los 80 s | Turno acotado a ~55 s (decisión 11). |
+| Vercel Hobby es para uso personal, no comercial | En producción, el front pasa a un plan comercial de Vercel o al mismo Cloudflare. |
+| Dependencia de un solo proveedor de modelo | La interfaz `ProveedorLLM` aísla el ciclo. Cambiar de modelo es `LLM_MODEL`; de proveedor, otra implementación de la interfaz. |
+
+**Costo mensual:**
+
+| Pieza | Plan | Costo en la demo | Con 1.000 OC al mes |
+| --- | --- | --- | --- |
+| Front (Vercel, proyecto `reto03-oc-front`) | Hobby | 0 | Plan comercial de Vercel |
+| Agente y estado (Cloudflare Worker + Durable Object con SQLite) | Workers Free | 0 | 0 en Free, o 5 USD/mes en Workers Paid si se necesita más CPU o subpeticiones |
+| Modelo (OpenRouter, `claude-haiku-5.5`) | Pago por uso, tope de 5 USD | Centavos | ≈ 3,5 a 5 USD |
 
 **Preguntas abiertas que hay que validar:**
 
@@ -390,5 +447,9 @@ Usé **Claude** (Anthropic) como asistente de construcción durante toda la sesi
 [10] SAP Fiori Design, Object Page: https://www.sap.com/design-system/fiori-design-web/v1-84/page-types/floorplans/object-page/usage
 [11] SAP Fiori Design, Message Handling: https://www.sap.com/design-system/fiori-design-web/v1-151/foundations/best-practices/global-patterns/messaging/messaging
 [12] Gerencie, Tarifa general del IVA (artículo 468 del Estatuto Tributario): https://www.gerencie.com/tarifa-general-en-el-impuesto-a-las-ventas.html
+
+[13] OpenRouter, API de modelos y precios: https://openrouter.ai/api/v1/models
+[14] Cloudflare, Workers limits: https://developers.cloudflare.com/workers/platform/limits/
+[15] Cloudflare, Durable Objects pricing: https://developers.cloudflare.com/durable-objects/platform/pricing/
 
 Consultadas el 23 de octubre de 2026.
