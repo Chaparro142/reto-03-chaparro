@@ -365,7 +365,7 @@ Sin SDK de OpenRouter ni de agentes: el adaptador es `fetch` (decisión 4).
 
 - `bun run demo.ts`: los 6 casos, idempotencia y confirmación, sin key.
 - `bun run test` (27 tests): confirmación tras un "no", fila bloqueada única en el control, paquete según 7.2, trazabilidad con las fuentes del PRD, confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
-- En producción: prueba de aceptación automatizada con el modelo real, criterio por criterio (prompt de la sección 11, O1–O4, HU-1 a HU-6, CA1–CA5): 30 de 30 tras las correcciones. Los casos bloqueados quedan en `control.csv` desde `oc_validar`, sin depender de que el modelo intente crear.
+- En producción: prueba de aceptación automatizada con el modelo real, criterio por criterio (prompt de la sección 11, O1–O4, HU-1 a HU-6, CA1–CA5): 29 de 30 en la última corrida completa; el criterio restante (fila bloqueada de `sol-002` en el control) se corrigió y se verificó por separado en producción. Los casos bloqueados quedan en `control.csv` desde `oc_validar`, sin depender de que el modelo intente crear.
 
 ---
 
