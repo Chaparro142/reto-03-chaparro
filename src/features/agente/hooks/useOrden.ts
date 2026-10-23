@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ErrorAgente,
   leerPayload,
@@ -14,12 +14,14 @@ export type EstadoOrden = {
   validacion: Validacion | null;
   trazabilidad: Trazabilidad | null;
   cargando: boolean;
+  /** Mensaje si la última recarga falló; el panel puede estar mostrando datos anteriores. */
   error: string | null;
+  recargar: () => void;
 };
 
-type Interno = EstadoOrden & { caso: string | null };
+type Datos = Omit<EstadoOrden, "recargar"> & { caso: string | null };
 
-const VACIO: Interno = {
+const VACIO: Datos = {
   caso: null,
   payload: null,
   validacion: null,
@@ -27,6 +29,23 @@ const VACIO: Interno = {
   cargando: false,
   error: null,
 };
+
+const ESPERAS_MS = [600, 1500];
+
+/** Lee un archivo y reintenta ante errores de red o del servidor. Un 404 ya llega como null. */
+async function conReintentos<T>(leer: () => Promise<T>): Promise<T> {
+  for (const espera of ESPERAS_MS) {
+    try {
+      return await leer();
+    } catch (e) {
+      const definitivo =
+        e instanceof ErrorAgente && e.estado >= 400 && e.estado < 500;
+      if (definitivo) throw e;
+      await new Promise((r) => setTimeout(r, espera));
+    }
+  }
+  return leer();
+}
 
 function mensajeDe(r: PromiseSettledResult<unknown>): string | null {
   if (r.status === "fulfilled") return null;
@@ -37,7 +56,9 @@ function mensajeDe(r: PromiseSettledResult<unknown>): string | null {
 
 /** Carga la OC de un caso desde los archivos que escribe el agente. Recarga cuando cambia `version`. */
 export function useOrden(caso: string | null, version: number): EstadoOrden {
-  const [estado, setEstado] = useState<Interno>(VACIO);
+  const [estado, setEstado] = useState<Datos>(VACIO);
+  const [intento, setIntento] = useState(0);
+  const recargar = useCallback(() => setIntento((n) => n + 1), []);
 
   useEffect(() => {
     if (!caso) {
@@ -52,12 +73,13 @@ export function useOrden(caso: string | null, version: number): EstadoOrden {
         : { ...VACIO, caso, cargando: true },
     );
 
-    // Cada archivo se carga por separado: si uno falla por un corte de red, el panel conserva
-    // lo que ya tenía de ese mismo caso. La trazabilidad es opcional (solo alimenta los tooltips).
+    // Cada archivo se carga por separado y con reintentos. Si aun así falla, el panel conserva
+    // lo que tenía de ese caso y muestra el error con un botón para reintentar, en vez de quedar
+    // desactualizado en silencio. La trazabilidad es opcional (solo alimenta los tooltips).
     Promise.allSettled([
-      leerPayload(caso),
-      leerValidacion(caso),
-      leerTrazabilidad(caso),
+      conReintentos(() => leerPayload(caso)),
+      conReintentos(() => leerValidacion(caso)),
+      conReintentos(() => leerTrazabilidad(caso)),
     ]).then(([payload, validacion, trazabilidad]) => {
       if (!vigente) return;
       setEstado((s) => {
@@ -82,7 +104,7 @@ export function useOrden(caso: string | null, version: number): EstadoOrden {
     return () => {
       vigente = false;
     };
-  }, [caso, version]);
+  }, [caso, version, intento]);
 
-  return estado;
+  return { ...estado, recargar };
 }

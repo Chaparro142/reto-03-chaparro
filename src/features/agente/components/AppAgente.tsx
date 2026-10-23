@@ -118,6 +118,7 @@ export function AppAgente() {
             ocupado={chat.pensando}
             onConfirmar={chat.confirmar}
             onRechazar={chat.rechazar}
+            onRecargar={orden.recargar}
           />
         </div>
         <div className={`min-h-0 border-borde lg:border-l ${vista === 'chat' ? 'block' : 'hidden'} lg:block`}>

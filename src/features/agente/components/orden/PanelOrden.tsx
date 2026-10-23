@@ -139,6 +139,7 @@ type Props = {
   ocupado: boolean;
   onConfirmar: () => void;
   onRechazar: () => void;
+  onRecargar: () => void;
 };
 
 /** Barra de acciones al pie, como en el object page de Fiori. */
@@ -202,6 +203,7 @@ export function PanelOrden({
   ocupado,
   onConfirmar,
   onRechazar,
+  onRecargar,
 }: Props) {
   const [toast, setToast] = useState<string | null>(null);
   const numeroPrevio = useRef<string | null | undefined>(undefined);
@@ -355,6 +357,26 @@ export function PanelOrden({
           </dl>
         )}
       </header>
+
+      {error && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-error-borde bg-error-suave px-[clamp(1.25rem,3vw,2.5rem)] py-2.5 text-[13.5px]"
+        >
+          <span className="font-semibold text-error">No se pudo actualizar la OC.</span>
+          <span className="min-w-0 flex-1 text-texto-2">
+            Lo que ves puede estar desactualizado. {error}
+          </span>
+          <button
+            type="button"
+            onClick={onRecargar}
+            disabled={cargando}
+            className="rounded-md border border-error-borde bg-superficie px-2.5 py-1 text-[13px] font-medium text-texto hover:bg-superficie-2 disabled:opacity-50"
+          >
+            {cargando ? "Reintentando…" : "Reintentar"}
+          </button>
+        </div>
+      )}
 
       <div className="px-[clamp(1.25rem,3vw,2.5rem)] pb-10">
         {(bloqueos.length > 0 ||
