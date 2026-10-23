@@ -9,7 +9,7 @@ export function Burbuja({ turno, esUltimo }: { turno: Turno; esUltimo: boolean }
       <div className="animar-entrada flex justify-end">
         <div className="max-w-[85%] rounded-lg rounded-br-sm bg-marca px-3.5 py-2 text-sobre-marca">
           <p className="whitespace-pre-wrap">{turno.texto}</p>
-          <p className="mt-0.5 text-right text-[11px] opacity-70">{hora(turno.ts)}</p>
+          <p className="mt-0.5 text-right text-[11px] opacity-80">{hora(turno.ts)}</p>
         </div>
       </div>
     )

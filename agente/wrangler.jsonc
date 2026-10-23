@@ -20,7 +20,7 @@
     "MAX_TOKENS_DIA": "3000000",
     "MAX_COSTO_USD": "5",
     "MAX_CARACTERES_MENSAJE": "4000",
-    "ALLOWED_ORIGINS": "http://localhost:3000,https://*.vercel.app"
+    "ALLOWED_ORIGINS": "http://localhost:3000,https://reto03-oc-front.vercel.app"
   }
   // Secretos (npx wrangler secret put <NOMBRE>): OPENROUTER_API_KEY (obligatorio), ACCESS_KEY y ADMIN_KEY (opcionales).
 }

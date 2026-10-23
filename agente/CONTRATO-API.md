@@ -4,7 +4,7 @@ Fuente de verdad entre el agente (Cloudflare Worker, carpeta `agente/`) y el fro
 
 - **URL base local:** `http://localhost:8787`
 - **URL base en producción:** se publica al desplegar (`https://reto03-oc-agente.<cuenta>.workers.dev`). El front no la llama desde el navegador: su proxy `/api/agente/*` (servidor de Next) la lee de `AGENTE_URL` y agrega `x-access-key` desde `AGENTE_ACCESS_KEY`.
-- **CORS:** el Worker acepta los orígenes de `ALLOWED_ORIGINS` (por defecto `http://localhost:3000` y `https://*.vercel.app`).
+- **CORS:** el Worker acepta los orígenes de `ALLOWED_ORIGINS` (por defecto `http://localhost:3000` y `https://reto03-oc-front.vercel.app`). El front real no lo necesita: llama al Worker desde su servidor.
 - **Clave de acceso (opcional):** si el Worker tiene `ACCESS_KEY`, toda ruta `/api/*` excepto `/api/health` exige el encabezado `x-access-key: <clave>`. Sin la clave responde `401 { error }`.
 - Todas las respuestas son JSON salvo los archivos de `/api/files/out/...`.
 

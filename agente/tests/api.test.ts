@@ -56,4 +56,13 @@ describe("API", () => {
     expect(ok.headers.get("Access-Control-Allow-Origin")).toBe("https://reto03-oc-front.vercel.app")
     expect(otro.headers.get("Access-Control-Allow-Origin")).toBeNull()
   })
+
+  test("una ruta con % malformado responde 400 sin detalles internos", async () => {
+    const env = await entorno(null)
+    for (const ruta of ["/api/files/%E0%A4%A", "/api/sessions/%E0%A4%A"]) {
+      const r = await manejar(new Request(`http://x${ruta}`), env)
+      expect(r.status).toBe(400)
+      expect(JSON.stringify(await r.json())).not.toContain("URI")
+    }
+  })
 })

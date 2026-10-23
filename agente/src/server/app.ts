@@ -47,7 +47,11 @@ const TIPOS: Record<string, string> = {
 export async function manejar(req: Request, env: Entorno): Promise<Response> {
   const cors = encabezadosCors(req.headers.get("Origin"), env.config.allowedOrigins)
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors })
-  const respuesta = await enrutar(req, env).catch((e: unknown) => json({ error: `Error interno: ${e instanceof Error ? e.message : String(e)}` }, 500))
+  const respuesta = await enrutar(req, env).catch((e: unknown) => {
+    // El detalle queda en los logs del Worker; al cliente solo un mensaje genérico.
+    console.error("Error interno:", e instanceof Error ? e.message : String(e))
+    return json({ error: "Error interno del agente. Intenta de nuevo." }, 500)
+  })
   for (const [k, v] of Object.entries(cors)) respuesta.headers.set(k, v)
   return respuesta
 }
@@ -69,9 +73,12 @@ async function enrutar(req: Request, env: Entorno): Promise<Response> {
     const archivos = (await env.store.listar("out/")).filter((r) => !r.startsWith("out/sesiones/"))
     return json({ archivos })
   }
-  if (pathname.startsWith("/api/files/")) return archivo(decodeURIComponent(pathname.slice("/api/files/".length)), env)
+  if (pathname.startsWith("/api/files/")) {
+    const ruta = decodificar(pathname.slice("/api/files/".length))
+    return ruta === null ? json({ error: "Ruta no permitida." }, 400) : archivo(ruta, env)
+  }
   const sesion = pathname.match(/^\/api\/sessions\/([^/]+)$/)
-  if (sesion) return historial(decodeURIComponent(sesion[1]!), env)
+  if (sesion) return historial(decodificar(sesion[1]!) ?? "", env)
   return json({ error: "Ruta no encontrada." }, 404)
 }
 
@@ -140,6 +147,15 @@ async function reiniciar(req: Request, env: Entorno): Promise<Response> {
   }
   await env.reiniciar()
   return json({ ok: true })
+}
+
+/** decodeURIComponent lanza con un "%" malformado: eso es un error del cliente (400), no del servidor. */
+function decodificar(segmento: string): string | null {
+  try {
+    return decodeURIComponent(segmento)
+  } catch {
+    return null
+  }
 }
 
 function json(datos: unknown, estado = 200): Response {

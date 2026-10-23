@@ -21,7 +21,7 @@ bun run demo.ts
 Procesa los 6 casos de `fixtures/reto-03/solicitudes/` llamando directamente a las herramientas. Imprime `apta`, bloqueos, confirmaciones, `retroactiva` y número de OC o motivo. Muestra la idempotencia (sol-001 dos veces) y las confirmaciones explícitas de sol-004, sol-005 y sol-006. Limpia `out/` al inicio.
 
 ```bash
-bun test          # 27 tests: ciclo con modelo simulado, confirmación, topes, errores, API, 6 casos
+bun test          # 30 tests: ciclo con modelo simulado, confirmación, topes, errores, API, 6 casos
 bun run typecheck # TypeScript estricto
 ```
 
@@ -50,7 +50,7 @@ curl -X POST http://localhost:8787/api/chat -H "content-type: application/json" 
 | `ADMIN_KEY`                                                                                                                   | secreto          | No               | Habilita `POST /api/reset` (borra `out/` antes de una demo).            |
 | `LLM_MODEL`                                                                                                                   | `wrangler.jsonc` | No               | Modelo de OpenRouter. Por defecto `anthropic/claude-haiku-5.5`.         |
 | `MAX_ITERACIONES`, `MAX_TOKENS_SESION`, `MAX_TOKENS_DIA`, `LLM_TIMEOUT_MS`, `MAX_DURACION_TURNO_MS`, `MAX_CARACTERES_MENSAJE` | `wrangler.jsonc` | No               | Topes de costo y tiempo.                                                |
-| `ALLOWED_ORIGINS`                                                                                                             | `wrangler.jsonc` | No               | Orígenes del front permitidos por CORS (acepta `https://*.vercel.app`). |
+| `ALLOWED_ORIGINS`                                                                                                             | `wrangler.jsonc` | No               | Orígenes exactos permitidos por CORS (acepta comodines como `https://*.vercel.app`, pero en producción se deja la URL del front). |
 
 Valores de ejemplo, sin secretos, en [`.env.example`](.env.example).
 
