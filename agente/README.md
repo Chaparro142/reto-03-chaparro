@@ -21,7 +21,7 @@ bun run demo.ts
 Procesa los 6 casos de `fixtures/reto-03/solicitudes/` llamando directamente a las herramientas. Imprime `apta`, bloqueos, confirmaciones, `retroactiva` y número de OC o motivo. Muestra la idempotencia (sol-001 dos veces) y las confirmaciones explícitas de sol-004, sol-005 y sol-006. Limpia `out/` al inicio.
 
 ```bash
-bun test          # 24 tests: ciclo con modelo simulado, confirmación, topes, errores, API, 6 casos
+bun test          # 27 tests: ciclo con modelo simulado, confirmación, topes, errores, API, 6 casos
 bun run typecheck # TypeScript estricto
 ```
 
@@ -32,7 +32,7 @@ cp .env.example .dev.vars   # y escribe tu OPENROUTER_API_KEY en .dev.vars
 bun run dev                  # API en http://localhost:8787
 ```
 
-`bun run dev` corre `wrangler dev`: el mismo Worker y el mismo Durable Object que en producción, con estado local en `.wrangler/`. El front (raíz del repo) apunta a `http://localhost:8787` con `NEXT_PUBLIC_AGENTE_URL`.
+`bun run dev` corre `wrangler dev`: el mismo Worker y el mismo Durable Object que en producción, con estado local en `.wrangler/`. El front (raíz del repo) apunta a `http://localhost:8787` por defecto; en Vercel usa `AGENTE_URL`, una variable del servidor que el proxy `/api/agente/*` lee para reenviar. El navegador nunca ve la URL ni la clave.
 
 Prueba rápida sin front:
 
