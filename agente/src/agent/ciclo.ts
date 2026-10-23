@@ -6,7 +6,8 @@ import type { ContextoHerramienta } from "../tools/oc.ts"
 import { definiciones, ejecutarHerramienta } from "../tools/registro.ts"
 import type { Ejecucion } from "../tools/registro.ts"
 import { normalizarCaso } from "../domain/paquete.ts"
-import { casosAutorizados, pendientesPorPregunta } from "./confirmacion.ts"
+import { casosAutorizados, esPreguntaDeConfirmacion, pendientesPorPregunta } from "./confirmacion.ts"
+import { idCorto } from "./sesion.ts"
 import type { Sesion, ToolCallVisible } from "./sesion.ts"
 
 export type Limites = {
@@ -76,7 +77,7 @@ export async function ejecutarTurno(sesion: Sesion, mensaje: string, boton: bool
   await deps.store.sumar(`uso/${deps.ahora().toISOString().slice(0, 10)}`, estado.tokens)
   await deps.store.sumar(CLAVE_COSTO, Math.round(estado.costoUsd * 1_000_000))
   const needsConfirmation = sesion.pendientes.length > 0
-  if (needsConfirmation && !error && !reply.trim().endsWith("?")) {
+  if (needsConfirmation && !error && !contienePreguntaDeConfirmacion(reply)) {
     reply += `\n\n¿Confirmas la creación de la OC de ${sesion.pendientes.join(", ")}? Responde "confirmo" o "no".`
   }
   sesion.turnos.push({ rol: "agente", texto: reply, toolCalls: estado.toolCalls, needsConfirmation, error, ts: deps.ahora().toISOString() })
@@ -89,6 +90,11 @@ export async function ejecutarTurno(sesion: Sesion, mensaje: string, boton: bool
     error,
     tokens: { turno: estado.tokens, sesion: sesion.tokens, costo_usd_turno: Math.round(estado.costoUsd * 1_000_000) / 1_000_000 },
   }
+}
+
+/** El modelo ya preguntó por la confirmación en algún párrafo de su respuesta (aunque no sea el último). */
+function contienePreguntaDeConfirmacion(respuesta: string): boolean {
+  return respuesta.split(/\n+/).some((parrafo) => esPreguntaDeConfirmacion(parrafo))
 }
 
 type Estado = { toolCalls: ToolCallVisible[]; casos: Set<string>; pendientes: Set<string>; porConfirmar: Set<string>; tokens: number; costoUsd: number }
@@ -122,7 +128,7 @@ async function bucle(sesion: Sesion, ctx: ContextoHerramienta, deps: Dependencia
 async function registrar(e: Ejecucion, sesionId: string, deps: Dependencias, estado: Estado): Promise<void> {
   const caso = normalizarCaso(String((e.args as { caso?: unknown }).caso ?? "")) ?? null
   estado.toolCalls.push({ nombre: e.nombre, args: e.args, ok: e.ok, resumen: e.resumen })
-  await deps.store.anexar("out/log.jsonl", JSON.stringify({ ts: deps.ahora().toISOString(), sesion: sesionId, herramienta: e.nombre, caso, ok: e.ok, resumen: e.resumen }))
+  await deps.store.anexar("out/log.jsonl", JSON.stringify({ ts: deps.ahora().toISOString(), sesion: idCorto(sesionId), herramienta: e.nombre, caso, ok: e.ok, resumen: e.resumen }))
   if (!caso) return
   estado.casos.add(caso)
   const datos = JSON.parse(e.resultado) as { ok: boolean; data?: Record<string, unknown>; requiere_confirmacion?: boolean }

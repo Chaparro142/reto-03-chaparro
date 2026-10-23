@@ -8,6 +8,7 @@ import { construirOrden, diferenciasCriticas } from "../domain/payload.ts"
 import type { Construccion } from "../domain/payload.ts"
 import { generarEvidencia } from "../domain/evidencia.ts"
 import { registrarControl } from "../domain/control.ts"
+import { idCorto } from "../agent/sesion.ts"
 import type { ResultadoControl } from "../domain/control.ts"
 
 /** Contexto que el ciclo (o demo.ts) entrega a cada herramienta. */
@@ -215,7 +216,7 @@ async function emitirOrden(
   registrar: (r: ResultadoControl, numero?: string | null) => Promise<void>,
 ): Promise<string> {
   const evidencia = await generarEvidencia(ctx.store, p.caso, p.paquete)
-  const confirmadoPor = `analista vía chat (sesión ${ctx.sessionId})`
+  const confirmadoPor = `analista vía chat (sesión ${idCorto(ctx.sessionId)})`
   const orden = { ...c.orden, excepciones: c.orden.excepciones.map((e) => ({ ...e, confirmado_por: confirmadoPor })) }
   const { numero_oc, fecha } = await ctx.sap.crearOrden(orden)
   await guardarOrden(ctx, p, { ...c, orden }, numero_oc)

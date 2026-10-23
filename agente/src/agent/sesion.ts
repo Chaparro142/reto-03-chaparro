@@ -22,6 +22,11 @@ export type Sesion = {
 
 export const ID_SESION = /^[A-Za-z0-9_-]{1,100}$/
 
+/** Forma corta del id para archivos públicos (OC, log): el id completo da acceso al historial por la API. */
+export function idCorto(id: string): string {
+  return id.slice(0, 8)
+}
+
 const ruta = (id: string) => `out/sesiones/${id}.json`
 
 export async function cargarSesion(store: Store, id: string): Promise<Sesion> {

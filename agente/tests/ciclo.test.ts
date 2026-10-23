@@ -70,6 +70,25 @@ describe("ciclo del agente", () => {
     expect(t4.toolCalls[0]?.resumen).toContain("4500000001")
   })
 
+  test("CA3: si el modelo ya preguntó (aunque no al final), el servidor no agrega una segunda pregunta", async () => {
+    const store = await proyectoTemporal()
+    const llm = new LLMSimulado([pide(["oc_validar", { caso: "sol-004" }]), responde("¿Confirmas que cree la OC de sol-004?\n\nEvidencia: out/sol-004/aprobacion.pdf")])
+    const t = await turno(store, sesionNueva(), llm, "procesa sol-004")
+    expect(t.needsConfirmation).toBe(true)
+    expect(t.reply.match(/¿Confirmas/g)?.length).toBe(1)
+  })
+
+  test("el log y la OC guardan solo los primeros 8 caracteres del id de sesión", async () => {
+    const store = await proyectoTemporal()
+    const sesion = sesionNueva("826ab15f-846d-49b3-8523-08de8b5b542e")
+    const llm = new LLMSimulado([pide(["oc_validar", { caso: "sol-004" }]), responde("¿Confirmas?"), pide(["oc_crear", { caso: "sol-004", confirmado: true }]), responde("ok")])
+    await turno(store, sesion, llm, "procesa sol-004")
+    await turno(store, sesion, llm, "confirmo")
+    const publico = `${await store.leer("out/log.jsonl")}${await store.leer("out/sol-004/payload.json")}${await store.leer("out/sap/ordenes.jsonl")}`
+    expect(publico).toContain("826ab15f")
+    expect(publico).not.toContain("846d-49b3")
+  })
+
   test("CA3: una pregunta que no es de confirmación no reabre la autorización", () => {
     expect(pendientesPorPregunta("¿Quieres ver la trazabilidad?", ["sol-006"])).toEqual([])
     expect(pendientesPorPregunta("¿Confirmas que cree la OC de sol-004?", ["sol-004", "sol-006"])).toEqual(["sol-004"])

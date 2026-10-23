@@ -342,7 +342,7 @@ Sin SDK de OpenRouter ni de agentes: el adaptador es `fetch` (decisión 4).
 - RC1 por NIT ignora el dígito de verificación. Sin NIT, el match por nombre es exacto tras normalizar; no hay coincidencia difusa para evitar falsos positivos.
 - Se agregaron validaciones no listadas pero obvias: centro de costo inexistente, moneda no soportada, códigos de IVA o de pago inexistentes.
 - Fechas comparadas como fecha local (`YYYY-MM-DD`) del texto, sin conversión de zona horaria.
-- `confirmado_por` registra "analista vía chat (sesión …)" porque no hay autenticación (no-objetivo del PRD).
+- `confirmado_por` registra "analista vía chat (sesión …)" porque no hay autenticación (no-objetivo del PRD). Solo se guardan los primeros 8 caracteres del id de sesión, en la OC y en `log.jsonl`: el id completo permite leer el historial por `/api/sessions/:id` y esos archivos se pueden descargar.
 
 ---
 
@@ -358,13 +358,13 @@ Sin SDK de OpenRouter ni de agentes: el adaptador es `fetch` (decisión 4).
 | HU-6 Errores                   | Hecho           | `{ ok:false, error }` legible; nada lanza; caso inexistente, JSON malformado y argumentos inválidos probados | —                                                               |
 | Front de chat                  | Hecho           | Herramientas visibles, "pensando", confirmación resaltada, archivos descargables                             | Streaming de eventos                                            |
 | Panel de la OC al estilo Fiori | Hecho | Cabecera con estado y etiqueta "Retroactiva", bloqueos como error, confirmaciones como advertencia con los dos valores, derivados como información, posiciones con el origen de cada valor (`trazabilidad.json`), evidencia y barra de acciones al pie. Probado en escritorio, celular y modo oscuro. | Que la analista edite un campo y el agente revalide |
-| Ciclo CA1–CA5                  | Hecho           | 27 tests automáticos con modelo simulado; los 6 casos probados en producción con `claude-haiku-5.5`, incluido el prompt del PRD sobre `sol-004` con confirmación en dos turnos | Streaming de eventos |
+| Ciclo CA1–CA5                  | Hecho           | 29 tests automáticos con modelo simulado; los 6 casos probados en producción con `claude-haiku-5.5`, incluido el prompt del PRD sobre `sol-004` con confirmación en dos turnos | Streaming de eventos |
 | Bonus módulo                   | Hecho           | `modulo/` generado desde las mismas fuentes                                                                  | —                                                               |
 
 **Verificación:**
 
 - `bun run demo.ts`: los 6 casos, idempotencia y confirmación, sin key.
-- `bun run test` (27 tests): confirmación tras un "no", fila bloqueada única en el control, paquete según 7.2, trazabilidad con las fuentes del PRD, confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
+- `bun run test` (29 tests): pregunta de confirmación sin duplicar, id de sesión recortado en archivos públicos, confirmación tras un "no", fila bloqueada única en el control, paquete según 7.2, trazabilidad con las fuentes del PRD, confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
 - En producción: prueba de aceptación automatizada con el modelo real, criterio por criterio (prompt de la sección 11, O1–O4, HU-1 a HU-6, CA1–CA5): 29 de 30 en la última corrida completa; el criterio restante (fila bloqueada de `sol-002` en el control) se corrigió y se verificó por separado en producción. Los casos bloqueados quedan en `control.csv` desde `oc_validar`, sin depender de que el modelo intente crear.
 
 ---
