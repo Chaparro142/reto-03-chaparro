@@ -39,6 +39,17 @@ describe("herramientas sobre los 6 casos", () => {
     expect(orden.posiciones[0]?.descripcion.length).toBeLessThanOrEqual(40)
   })
 
+  test("HU-1 y HU-3: paquete según 7.2 y trazabilidad solo con las fuentes del PRD", async () => {
+    const store = await proyectoTemporal()
+    const ctx = contexto(store)
+    const p = await parse(oc.leer_paquete.execute({ caso: "sol-005" }, ctx))
+    expect(Object.keys(p.data ?? {})).toEqual(expect.arrayContaining(["correo", "solicitud", "cotizacion", "aprobacion", "factura"]))
+    expect((p.data?.cotizacion as { texto: string }).texto).toContain("COTIZACIÓN PC-5520")
+    await parse(oc.construir_payload.execute({ caso: "sol-006" }, ctx))
+    const traza = JSON.parse((await store.leer("out/sol-006/trazabilidad.json"))!) as Record<string, string>
+    for (const fuente of Object.values(traza)) expect(fuente).toMatch(/^(solicitud|cotizacion|derivado|maestro\.[a-z-]+)$/)
+  })
+
   test("sol-004: la OC va por el valor de la solicitud y unidad H", async () => {
     const ctx = contexto(await proyectoTemporal())
     const r = await parse(oc.construir_payload.execute({ caso: "sol-004" }, ctx))

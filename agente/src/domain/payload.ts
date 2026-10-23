@@ -5,7 +5,8 @@ import { contenidoAprobacion, sha256 } from "./evidencia.ts"
 import { recortar, soloFecha } from "./texto.ts"
 
 export type Unidad = "UN" | "H" | "MES"
-export type Fuente = "solicitud" | "cotizacion" | "correo" | "aprobacion" | "configuracion" | "derivado" | `maestro.${string}`
+/** Fuentes que admite el PRD (HU-3). El correo y la aprobación son parte del paquete de la solicitud; las constantes de SAP, derivados. */
+export type Fuente = "solicitud" | "cotizacion" | "derivado" | `maestro.${string}`
 export type Construccion = { orden: OrdenCompra; trazabilidad: Record<string, Fuente> }
 
 /** Infiere la unidad desde el ítem cotizado: "Hora…" → H, mensual → MES, resto UN. */
@@ -66,19 +67,19 @@ function trazar(paquete: Paquete, validacion: Validacion): Record<string, Fuente
   const s = paquete.solicitud
   return {
     "referencia.solicitud_id": "solicitud",
-    "referencia.correo_id": "correo",
+    "referencia.correo_id": "solicitud",
     "referencia.cotizacion_ref": "cotizacion",
-    sociedad: "configuracion",
-    organizacion_compras: "configuracion",
+    sociedad: "derivado",
+    organizacion_compras: "derivado",
     "proveedor.codigo_sap": "maestro.proveedores",
     "proveedor.nit": "maestro.proveedores",
     "proveedor.nombre": "maestro.proveedores",
     moneda: "solicitud",
     condiciones_pago: s.condiciones_pago ? "solicitud" : "maestro.proveedores",
-    "aprobador.email": "aprobacion",
-    "aprobador.fecha_aprobacion": "aprobacion",
+    "aprobador.email": "solicitud",
+    "aprobador.fecha_aprobacion": "solicitud",
     "aprobador.evidencia_sha256": "derivado",
-    "posiciones[0].numero": "configuracion",
+    "posiciones[0].numero": "derivado",
     "posiciones[0].descripcion": "solicitud",
     "posiciones[0].cantidad": "solicitud",
     "posiciones[0].unidad": "derivado",
@@ -86,7 +87,7 @@ function trazar(paquete: Paquete, validacion: Validacion): Record<string, Fuente
     "posiciones[0].centro_costo": "solicitud",
     "posiciones[0].subarea": "solicitud",
     "posiciones[0].indicador_iva": s.indicador_iva ? "solicitud" : "maestro.proveedores",
-    excepciones: validacion.confirmaciones.length ? "derivado" : "configuracion",
+    excepciones: "derivado",
   }
 }
 

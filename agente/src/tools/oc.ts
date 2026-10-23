@@ -72,13 +72,7 @@ export const leer_paquete = {
       if (!id) return falla(`"${args.caso}" no es un caso válido. Usa la forma sol-001.`)
       const paquete = await leerPaquete(ctx.store, id)
       if (!paquete.ok) return json(paquete)
-      const { cotizacion, aprobacion, ...resto } = paquete.data
-      const resumen = {
-        ...resto,
-        cotizacion: cotizacion && { ...cotizacion, texto: undefined },
-        aprobacion: aprobacion && { ...aprobacion },
-      }
-      return json({ ok: true, data: { caso: id, ...resumen } })
+      return json({ ok: true, data: { caso: id, ...paquete.data } })
     })
   },
 }

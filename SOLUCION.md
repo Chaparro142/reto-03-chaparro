@@ -335,6 +335,7 @@ Sin SDK de OpenRouter ni de agentes: el adaptador es `fetch` (decisión 4).
 - Los casos se identifican por su carpeta (`sol-004`). El agente traduce "SOL-2026-004" o "la 4".
 - "Aprobado" se detecta por palabra, excluyendo "no aprobado" y "rechazado". En producción se pediría una respuesta estructurada o un flujo de aprobación con botón.
 - **Precio con IVA:** las cotizaciones dan precios "IVA incluido" y la solicitud usa ese mismo valor unitario. Lo llevé tal cual al payload porque el PRD lo define así. En SAP real `NetPriceAmount` es **neto**: habría que dividir por (1 + tasa del indicador) y confirmarlo con Contabilidad. Con la tarifa general de 19 % (artículo 468 del Estatuto Tributario [12]), llevarlo tal cual infla la base en 19 %: en `sol-001`, 11.400.000 con IVA son 9.579.832 de base, como dice la propia cotización. Es el supuesto más importante a validar.
+- **Trazabilidad con las cuatro fuentes del PRD** (`solicitud`, `cotizacion`, `maestro.<nombre>`, `derivado`): el correo y la aprobación son parte del paquete de la solicitud, así que se trazan como `solicitud`. Las constantes de SAP (sociedad, organización de compras, número de posición), el sha256 de la evidencia y la unidad inferida se trazan como `derivado`.
 - La unidad se infiere del ítem cotizado: "Hora…" → `H`, mensual → `MES`, resto `UN`. Queda trazada como derivado.
 - La descripción se recorta a 40 caracteres cortando en palabra. La completa queda en la solicitud.
 - RC1 por NIT ignora el dígito de verificación. Sin NIT, el match por nombre es exacto tras normalizar; no hay coincidencia difusa para evitar falsos positivos.
@@ -356,13 +357,13 @@ Sin SDK de OpenRouter ni de agentes: el adaptador es `fetch` (decisión 4).
 | HU-6 Errores                   | Hecho           | `{ ok:false, error }` legible; nada lanza; caso inexistente, JSON malformado y argumentos inválidos probados | —                                                               |
 | Front de chat                  | Hecho           | Herramientas visibles, "pensando", confirmación resaltada, archivos descargables                             | Streaming de eventos                                            |
 | Panel de la OC al estilo Fiori | Hecho | Cabecera con estado y etiqueta "Retroactiva", bloqueos como error, confirmaciones como advertencia con los dos valores, derivados como información, posiciones con el origen de cada valor (`trazabilidad.json`), evidencia y barra de acciones al pie. Probado en escritorio, celular y modo oscuro. | Que la analista edite un campo y el agente revalide |
-| Ciclo CA1–CA5                  | Hecho           | 22 tests automáticos con modelo simulado; los 6 casos probados en producción con `claude-haiku-5.5`, incluido el prompt del PRD sobre `sol-004` con confirmación en dos turnos | Streaming de eventos |
+| Ciclo CA1–CA5                  | Hecho           | 24 tests automáticos con modelo simulado; los 6 casos probados en producción con `claude-haiku-5.5`, incluido el prompt del PRD sobre `sol-004` con confirmación en dos turnos | Streaming de eventos |
 | Bonus módulo                   | Hecho           | `modulo/` generado desde las mismas fuentes                                                                  | —                                                               |
 
 **Verificación:**
 
 - `bun run demo.ts`: los 6 casos, idempotencia y confirmación, sin key.
-- `bun run test` (22 tests): confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
+- `bun run test` (24 tests): paquete según 7.2, trazabilidad con las fuentes del PRD, confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
 - En producción: los 6 casos con el modelo real (sección 4).
 
 ---

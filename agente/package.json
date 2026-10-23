@@ -10,7 +10,7 @@
     "dev": "wrangler dev",
     "demo": "bun run demo.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun scripts/embeber.ts && tsc --noEmit",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

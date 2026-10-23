@@ -21,7 +21,7 @@ bun run demo.ts
 Procesa los 6 casos de `fixtures/reto-03/solicitudes/` llamando directamente a las herramientas. Imprime `apta`, bloqueos, confirmaciones, `retroactiva` y número de OC o motivo. Muestra la idempotencia (sol-001 dos veces) y las confirmaciones explícitas de sol-004, sol-005 y sol-006. Limpia `out/` al inicio.
 
 ```bash
-bun test          # 18 tests: ciclo con modelo simulado, confirmación, topes, errores, 6 casos
+bun test          # 24 tests: ciclo con modelo simulado, confirmación, topes, errores, API, 6 casos
 bun run typecheck # TypeScript estricto
 ```
 
