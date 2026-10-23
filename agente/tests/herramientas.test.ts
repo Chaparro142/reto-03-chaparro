@@ -78,6 +78,16 @@ describe("herramientas sobre los 6 casos", () => {
     expect(guardado.excepciones[0]?.confirmado_por).toBe("analista vía chat (sesión test)")
   })
 
+  test("HU-5: validar un caso bloqueado deja una sola fila \"bloqueada\" aunque luego se intente crear", async () => {
+    const store = await proyectoTemporal()
+    const ctx = contexto(store)
+    await parse(oc.validar.execute({ caso: "sol-002" }, ctx))
+    await parse(oc.crear.execute({ caso: "sol-002" }, ctx))
+    const filas = (await store.leer("out/control.csv"))!.trim().split("\n").slice(1)
+    expect(filas.length).toBe(1)
+    expect(filas[0]).toStartWith("SOL-2026-002,bloqueada,,false,RC1,,")
+  })
+
   test("montos alterados en el payload se rechazan", async () => {
     const ctx = contexto(await proyectoTemporal())
     const construido = await parse(oc.construir_payload.execute({ caso: "sol-001" }, ctx))

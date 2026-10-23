@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { LLMSimulado, pide, responde } from "../src/llm/simulado.ts"
-import { casosAutorizados } from "../src/agent/confirmacion.ts"
+import { casosAutorizados, pendientesPorPregunta } from "../src/agent/confirmacion.ts"
 import { proyectoTemporal, sesionNueva, turno } from "./utilidades.ts"
 
 const crearConfirmado = pide(["oc_crear", { caso: "sol-004", confirmado: true }])
@@ -47,6 +47,32 @@ describe("ciclo del agente", () => {
     await turno(store, sesion, llm, "¿quién es el proveedor?")
     const t3 = await turno(store, sesion, llm, "confirmo")
     expect(t3.toolCalls[0]?.ok).toBe(false)
+  })
+
+  test("CA3: tras un \"no\", si el agente vuelve a preguntar sin herramientas, el siguiente \"confirmo\" sí crea", async () => {
+    const store = await proyectoTemporal()
+    const sesion = sesionNueva()
+    const llm = new LLMSimulado([
+      pide(["oc_validar", { caso: "sol-006" }]),
+      responde("Requiere tu confirmación (RC6). ¿Confirmas?"),
+      responde("Entendido, no la creo."),
+      responde("Esta es la OC de sol-006 con IVA C1. ¿Confirmas que cree la OC de sol-006?"),
+      pide(["oc_crear", { caso: "sol-006", confirmado: true }]),
+      responde("OC creada."),
+    ])
+    await turno(store, sesion, llm, "procesa sol-006")
+    const t2 = await turno(store, sesion, llm, "no, todavía no")
+    expect(t2.needsConfirmation).toBe(false)
+    const t3 = await turno(store, sesion, llm, "muéstramela de nuevo")
+    expect(t3.pendientes).toEqual(["sol-006"])
+    const t4 = await turno(store, sesion, llm, "confirmo")
+    expect(t4.toolCalls[0]?.ok).toBe(true)
+    expect(t4.toolCalls[0]?.resumen).toContain("4500000001")
+  })
+
+  test("CA3: una pregunta que no es de confirmación no reabre la autorización", () => {
+    expect(pendientesPorPregunta("¿Quieres ver la trazabilidad?", ["sol-006"])).toEqual([])
+    expect(pendientesPorPregunta("¿Confirmas que cree la OC de sol-004?", ["sol-004", "sol-006"])).toEqual(["sol-004"])
   })
 
   test("detector de confirmación: botón, frases, negativas y casos nombrados", () => {

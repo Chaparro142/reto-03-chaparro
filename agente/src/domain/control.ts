@@ -14,8 +14,12 @@ export type FilaControl = {
   confirmaciones: string[]
 }
 
-/** HU-5: cada intento (exitoso, bloqueado o pendiente) agrega una fila a out/control.csv. */
+/**
+ * HU-5: cada intento (exitoso, bloqueado o pendiente) agrega una fila a out/control.csv.
+ * Un bloqueo repetido sin cambios (validar y luego intentar crear el mismo caso) no se duplica.
+ */
 export async function registrarControl(store: Store, fila: FilaControl, ahora: Date): Promise<void> {
+  if (fila.resultado === "bloqueada" && (await ultimaFila(store, fila.solicitud_id))?.startsWith(`${fila.solicitud_id},bloqueada,,${fila.retroactiva},${fila.bloqueos.join("|")},`)) return
   const celdas = [
     fila.solicitud_id,
     fila.resultado,
@@ -26,6 +30,11 @@ export async function registrarControl(store: Store, fila: FilaControl, ahora: D
     ahora.toISOString(),
   ]
   await store.anexar(RUTA_CONTROL, celdas.map(csv).join(","), ENCABEZADO)
+}
+
+async function ultimaFila(store: Store, solicitudId: string): Promise<string | undefined> {
+  const texto = await store.leer(RUTA_CONTROL)
+  return texto?.trim().split("\n").reverse().find((l) => l.startsWith(`${solicitudId},`))
 }
 
 function csv(valor: string): string {

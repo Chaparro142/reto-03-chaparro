@@ -131,6 +131,7 @@ El system prompt es `prompt.md` + el conocimiento. Cambiar una regla de negocio 
    - Si el usuario nombra casos ("confirmo sol-004"), solo esos quedan autorizados.
    - Esa autorización llega a `oc_crear` como `ctx.autorizaConfirmacion(caso)`. Si el modelo envía `confirmado: true` sin autorización del usuario, la herramienta lo rechaza.
    - La autorización caduca: solo vale en el mensaje inmediatamente posterior a la pregunta.
+   - Si la analista dice "no" y más adelante el agente vuelve a preguntar por ese caso (aunque lo haga de memoria, sin llamar herramientas), el servidor lo reconoce como pregunta de confirmación y el siguiente "confirmo" vuelve a valer. Una pregunta cualquiera no reabre la autorización.
    - Si el modelo olvida cerrar con pregunta, el servidor la agrega.
 
 El front resalta ese estado: etiqueta ámbar en la respuesta y barra con "Confirmar y crear" / "No crear". Los errores del proveedor (timeout, 401, 429, 5xx) se convierten en mensajes claros en el chat y la sesión sigue viva (CA5).
@@ -357,14 +358,14 @@ Sin SDK de OpenRouter ni de agentes: el adaptador es `fetch` (decisión 4).
 | HU-6 Errores                   | Hecho           | `{ ok:false, error }` legible; nada lanza; caso inexistente, JSON malformado y argumentos inválidos probados | —                                                               |
 | Front de chat                  | Hecho           | Herramientas visibles, "pensando", confirmación resaltada, archivos descargables                             | Streaming de eventos                                            |
 | Panel de la OC al estilo Fiori | Hecho | Cabecera con estado y etiqueta "Retroactiva", bloqueos como error, confirmaciones como advertencia con los dos valores, derivados como información, posiciones con el origen de cada valor (`trazabilidad.json`), evidencia y barra de acciones al pie. Probado en escritorio, celular y modo oscuro. | Que la analista edite un campo y el agente revalide |
-| Ciclo CA1–CA5                  | Hecho           | 24 tests automáticos con modelo simulado; los 6 casos probados en producción con `claude-haiku-5.5`, incluido el prompt del PRD sobre `sol-004` con confirmación en dos turnos | Streaming de eventos |
+| Ciclo CA1–CA5                  | Hecho           | 27 tests automáticos con modelo simulado; los 6 casos probados en producción con `claude-haiku-5.5`, incluido el prompt del PRD sobre `sol-004` con confirmación en dos turnos | Streaming de eventos |
 | Bonus módulo                   | Hecho           | `modulo/` generado desde las mismas fuentes                                                                  | —                                                               |
 
 **Verificación:**
 
 - `bun run demo.ts`: los 6 casos, idempotencia y confirmación, sin key.
-- `bun run test` (24 tests): paquete según 7.2, trazabilidad con las fuentes del PRD, confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
-- En producción: los 6 casos con el modelo real (sección 4).
+- `bun run test` (27 tests): confirmación tras un "no", fila bloqueada única en el control, paquete según 7.2, trazabilidad con las fuentes del PRD, confirmación, negativas, caducidad de la confirmación, argumentos inválidos, tope de iteraciones, error del proveedor, log, montos alterados, idempotencia, OC ya existente, ruta maliciosa, JSON malformado, monto no numérico, retroactiva en el control, evidencia con sha256, tope de gasto de 5 USD, `ACCESS_KEY` y CORS.
+- En producción: prueba de aceptación automatizada con el modelo real, criterio por criterio (prompt de la sección 11, O1–O4, HU-1 a HU-6, CA1–CA5): 30 de 30 tras las correcciones. Los casos bloqueados quedan en `control.csv` desde `oc_validar`, sin depender de que el modelo intente crear.
 
 ---
 

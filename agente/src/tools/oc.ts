@@ -85,7 +85,13 @@ export const validar = {
       const p = await preparar(args.caso, ctx)
       if (!p.ok) return json(p)
       const existente = await ctx.sap.buscarOrdenPorReferencia(p.data.paquete.solicitud.solicitud_id)
-      const data = { ...p.data.validacion, oc_existente: existente?.numero_oc ?? null, ruta: `out/${p.data.caso}/validacion.json` }
+      const v = p.data.validacion
+      // Un caso bloqueado es un intento que no pasó el control: queda en control.csv sin depender del modelo.
+      if (!v.apta) {
+        const fila = { solicitud_id: p.data.paquete.solicitud.solicitud_id, resultado: "bloqueada" as const, numero_oc: null, retroactiva: v.retroactiva }
+        await registrarControl(ctx.store, { ...fila, bloqueos: v.bloqueos.map((b) => b.codigo), confirmaciones: v.confirmaciones.map((c) => c.codigo) }, ctx.ahora())
+      }
+      const data = { ...v, oc_existente: existente?.numero_oc ?? null, ruta: `out/${p.data.caso}/validacion.json` }
       return json({ ok: true, data })
     })
   },

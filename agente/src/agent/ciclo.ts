@@ -6,7 +6,7 @@ import type { ContextoHerramienta } from "../tools/oc.ts"
 import { definiciones, ejecutarHerramienta } from "../tools/registro.ts"
 import type { Ejecucion } from "../tools/registro.ts"
 import { normalizarCaso } from "../domain/paquete.ts"
-import { casosAutorizados } from "./confirmacion.ts"
+import { casosAutorizados, pendientesPorPregunta } from "./confirmacion.ts"
 import type { Sesion, ToolCallVisible } from "./sesion.ts"
 
 export type Limites = {
@@ -50,7 +50,7 @@ export async function ejecutarTurno(sesion: Sesion, mensaje: string, boton: bool
   sesion.mensajes.push({ rol: "usuario", texto })
   sesion.turnos.push({ rol: "usuario", texto, ts: deps.ahora().toISOString() })
 
-  const estado = { toolCalls: [] as ToolCallVisible[], casos: new Set<string>(), pendientes: new Set<string>(), tokens: 0, costoUsd: 0 }
+  const estado: Estado = { toolCalls: [], casos: new Set(), pendientes: new Set(), porConfirmar: new Set(sesion.porConfirmar ?? []), tokens: 0, costoUsd: 0 }
   const ctx: ContextoHerramienta = {
     directory: deps.directory,
     sessionId: sesion.id,
@@ -69,7 +69,9 @@ export async function ejecutarTurno(sesion: Sesion, mensaje: string, boton: bool
     reply = `⚠️ ${error}`
   }
 
+  if (!error) for (const caso of pendientesPorPregunta(reply, [...estado.porConfirmar])) estado.pendientes.add(caso)
   sesion.pendientes = [...estado.pendientes]
+  sesion.porConfirmar = [...estado.porConfirmar]
   sesion.tokens += estado.tokens
   await deps.store.sumar(`uso/${deps.ahora().toISOString().slice(0, 10)}`, estado.tokens)
   await deps.store.sumar(CLAVE_COSTO, Math.round(estado.costoUsd * 1_000_000))
@@ -89,7 +91,7 @@ export async function ejecutarTurno(sesion: Sesion, mensaje: string, boton: bool
   }
 }
 
-type Estado = { toolCalls: ToolCallVisible[]; casos: Set<string>; pendientes: Set<string>; tokens: number; costoUsd: number }
+type Estado = { toolCalls: ToolCallVisible[]; casos: Set<string>; pendientes: Set<string>; porConfirmar: Set<string>; tokens: number; costoUsd: number }
 
 async function bucle(sesion: Sesion, ctx: ContextoHerramienta, deps: Dependencias, estado: Estado): Promise<string> {
   const herramientas = definiciones()
@@ -125,13 +127,21 @@ async function registrar(e: Ejecucion, sesionId: string, deps: Dependencias, est
   estado.casos.add(caso)
   const datos = JSON.parse(e.resultado) as { ok: boolean; data?: Record<string, unknown>; requiere_confirmacion?: boolean }
   if (e.nombre === "oc_crear") {
-    if (datos.ok) estado.pendientes.delete(caso)
-    else if (datos.requiere_confirmacion) estado.pendientes.add(caso)
+    if (datos.ok) {
+      estado.pendientes.delete(caso)
+      estado.porConfirmar.delete(caso)
+    } else if (datos.requiere_confirmacion) {
+      estado.pendientes.add(caso)
+      estado.porConfirmar.add(caso)
+    }
     return
   }
   const d = datos.data
   const conConfirmaciones =
     (e.nombre === "oc_validar" && d?.apta === true && d.oc_existente === null && (d.confirmaciones as unknown[]).length > 0) ||
     (e.nombre === "oc_construir_payload" && ((d?.confirmaciones_pendientes as unknown[] | undefined)?.length ?? 0) > 0 && d?.numero_oc === null)
-  if (datos.ok && conConfirmaciones) estado.pendientes.add(caso)
+  if (datos.ok && conConfirmaciones) {
+    estado.pendientes.add(caso)
+    estado.porConfirmar.add(caso)
+  }
 }

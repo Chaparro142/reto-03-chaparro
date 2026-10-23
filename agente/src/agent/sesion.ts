@@ -15,6 +15,8 @@ export type Sesion = {
   turnos: Turno[]
   /** Casos que esperan confirmación de la analista; solo valen para el mensaje siguiente. */
   pendientes: string[]
+  /** Casos validados con excepciones y aún sin OC; vuelven a ser pendientes si el agente pregunta otra vez por ellos. */
+  porConfirmar?: string[]
   tokens: number
 }
 
