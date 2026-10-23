@@ -2,7 +2,178 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Personaliza tu tema aquí
- * Documentación: https://tailwindcss.com/docs/theme
- */
+/* Tokens: neutrales teñidos hacia el azul de marca; estados al estilo del modelo de mensajes de Fiori. */
+:root {
+  --fondo: oklch(97.2% 0.006 250);
+  --superficie: oklch(99.3% 0.003 250);
+  --superficie-2: oklch(95.4% 0.008 250);
+  --borde: oklch(89.5% 0.012 250);
+  --borde-fuerte: oklch(80% 0.018 250);
+  --texto: oklch(24% 0.025 255);
+  --texto-2: oklch(45% 0.025 255);
+  --texto-3: oklch(58% 0.02 255);
+
+  --marca: oklch(46% 0.15 255);
+  --marca-hover: oklch(40% 0.15 255);
+  --marca-suave: oklch(94% 0.03 255);
+  --sobre-marca: oklch(98.5% 0.005 255);
+
+  --error: oklch(50% 0.17 25);
+  --error-suave: oklch(95.5% 0.025 25);
+  --error-borde: oklch(84% 0.07 25);
+  --aviso: oklch(52% 0.13 65);
+  --aviso-suave: oklch(96% 0.04 80);
+  --aviso-borde: oklch(83% 0.1 75);
+  --info: oklch(48% 0.1 240);
+  --info-suave: oklch(95.5% 0.02 240);
+  --info-borde: oklch(85% 0.05 240);
+  --exito: oklch(48% 0.12 155);
+  --exito-suave: oklch(95.5% 0.035 155);
+  --exito-borde: oklch(83% 0.08 155);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: oklch(18% 0.015 255);
+    --superficie: oklch(21.5% 0.017 255);
+    --superficie-2: oklch(25% 0.018 255);
+    --borde: oklch(31% 0.02 255);
+    --borde-fuerte: oklch(40% 0.025 255);
+    --texto: oklch(93% 0.01 255);
+    --texto-2: oklch(76% 0.015 255);
+    --texto-3: oklch(64% 0.015 255);
+
+    --marca: oklch(70% 0.13 255);
+    --marca-hover: oklch(76% 0.12 255);
+    --marca-suave: oklch(29% 0.05 255);
+    --sobre-marca: oklch(18% 0.02 255);
+
+    --error: oklch(72% 0.15 25);
+    --error-suave: oklch(26% 0.05 25);
+    --error-borde: oklch(42% 0.09 25);
+    --aviso: oklch(80% 0.13 75);
+    --aviso-suave: oklch(27% 0.05 70);
+    --aviso-borde: oklch(45% 0.09 70);
+    --info: oklch(76% 0.09 240);
+    --info-suave: oklch(26% 0.04 240);
+    --info-borde: oklch(42% 0.06 240);
+    --exito: oklch(76% 0.12 155);
+    --exito-suave: oklch(26% 0.045 155);
+    --exito-borde: oklch(42% 0.08 155);
+
+    color-scheme: dark;
+  }
+}
+
+html,
+body {
+  background: var(--fondo);
+  color: var(--texto);
+}
+
+body {
+  font-feature-settings: 'tnum' 1, 'cv01' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--marca-suave);
+}
+
+:focus-visible {
+  outline: 2px solid var(--marca);
+  outline-offset: 2px;
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulso {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animar-entrada {
+  animation: entrar 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Markdown de las respuestas del agente */
+.md > * + * {
+  margin-top: 0.6em;
+}
+.md strong {
+  font-weight: 600;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.2em;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.3em;
+}
+.md li + li {
+  margin-top: 0.2em;
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--superficie-2);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}
+.md h1,
+.md h2,
+.md h3 {
+  font-weight: 600;
+  font-size: 1em;
+}
+.md .tabla {
+  overflow-x: auto;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+.md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86em;
+}
+.md th {
+  text-align: left;
+  font-weight: 600;
+  background: var(--superficie-2);
+  color: var(--texto-2);
+}
+.md th,
+.md td {
+  padding: 0.4em 0.65em;
+  border-bottom: 1px solid var(--borde);
+  white-space: nowrap;
+}
+.md tr:last-child td {
+  border-bottom: 0;
+}

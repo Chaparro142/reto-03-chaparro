@@ -70,3 +70,7 @@ supabase/.temp
 .claude/logs/
 .forge-eject-backup/
 # --- /forge ---
+
+# Generados por Next/TypeScript
+*.tsbuildinfo
+next-env.d.ts

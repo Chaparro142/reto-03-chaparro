@@ -1,8 +1,5 @@
-export default function Home() {
-  return (
-    <main className="min-h-screen p-8">
-      <h1 className="text-2xl font-bold">Mi aplicación</h1>
-      <p className="mt-2 text-gray-600">Tu app está lista. Empieza a construir.</p>
-    </main>
-  )
+import { AppAgente } from '@/features/agente/components/AppAgente'
+
+export default function Inicio() {
+  return <AppAgente />
 }
