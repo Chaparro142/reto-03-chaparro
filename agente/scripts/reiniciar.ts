@@ -1,6 +1,6 @@
 /**
  * Deja out/ vacío en producción (POST /api/reset) antes de una demo.
- * Pide la ADMIN_KEY por teclado: nunca queda en el código ni en el historial de comandos.
+ * Pide la ADMIN_KEY y la ACCESS_KEY por teclado: nunca quedan en el código ni en el historial de comandos.
  * Uso: bun run reiniciar  (dentro de agente/)
  */
 const URL_AGENTE =
@@ -12,9 +12,14 @@ if (!clave) {
   process.exit(1);
 }
 
+// Si el Worker tiene ACCESS_KEY, toda ruta /api/* la exige, también el reinicio.
+const claveAcceso = (prompt("Escribe tu ACCESS_KEY (Enter si el Worker no tiene):") ?? "").trim();
+const encabezados: Record<string, string> = { "x-admin-key": clave };
+if (claveAcceso) encabezados["x-access-key"] = claveAcceso;
+
 const respuesta = await fetch(`${URL_AGENTE}/api/reset`, {
   method: "POST",
-  headers: { "x-admin-key": clave },
+  headers: encabezados,
 });
 const cuerpo = await respuesta.text();
 if (respuesta.ok) {
