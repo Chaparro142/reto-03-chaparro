@@ -34,7 +34,8 @@ const ETIQUETAS: Record<string, string> = {
   indicador_iva: 'Indicador de IVA',
   solicitud: 'Solicitud',
   cotizacion: 'Cotización',
-  diferencia_pct: 'Diferencia',
+  diferencia: 'Diferencia en valor',
+  diferencia_pct: 'Diferencia en %',
   unidad: 'Unidad',
 }
 

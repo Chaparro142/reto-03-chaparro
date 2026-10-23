@@ -8,7 +8,7 @@ import type {
   Validacion,
 } from "../../types/contrato";
 import { dinero, fechaCorta } from "../../utils/formato";
-import { MensajeDerivado, MensajeHallazgo } from "./Mensajes";
+import { MensajeDerivado, MensajeHallazgo, type EstadoConfirmacion } from "./Mensajes";
 import { TablaPosiciones } from "./TablaPosiciones";
 
 type Estado = { texto: string; clase: string };
@@ -254,6 +254,12 @@ export function PanelOrden({
   const confirmaciones = validacion?.confirmaciones ?? [];
   const derivados = Object.entries(validacion?.derivados ?? {});
   const creada = Boolean(payload?.numero_oc || payload?.estado === "creada");
+  // La confirmación se lee del registro de excepciones de la OC, no se deduce de que exista.
+  const estadoConfirmacion = (codigo: string): EstadoConfirmacion => {
+    if (!creada) return "pendiente";
+    const excepcion = payload?.excepciones.find((x) => x.codigo === codigo);
+    return excepcion?.confirmado_por ? "confirmada" : "sin_registro";
+  };
   const titulo = payload?.numero_oc
     ? `OC ${payload.numero_oc}`
     : "Nueva orden de compra";
@@ -376,7 +382,7 @@ export function PanelOrden({
                   key={`c-${h.codigo}-${i}`}
                   hallazgo={h}
                   moneda={moneda}
-                  confirmada={creada}
+                  confirmacion={estadoConfirmacion(h.codigo)}
                 />
               ))}
               {derivados.map(([campo, d]) => (

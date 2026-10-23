@@ -71,24 +71,33 @@ function Valores({
   );
 }
 
+/**
+ * pendiente: la OC no se ha creado y espera confirmación.
+ * confirmada: la excepción quedó registrada en la OC con quién la confirmó.
+ * sin_registro: la OC existe pero la excepción no tiene confirmado_por.
+ */
+export type EstadoConfirmacion = "pendiente" | "confirmada" | "sin_registro";
+
 type PropsHallazgo = {
   hallazgo: Hallazgo;
   moneda: string;
-  confirmada?: boolean;
+  confirmacion?: EstadoConfirmacion;
+};
+
+const TEXTO_CONFIRMACION: Record<EstadoConfirmacion, string> = {
+  pendiente: "Requiere confirmación",
+  confirmada: "Confirmada por la analista",
+  sin_registro: "OC creada sin confirmación registrada",
 };
 
 export function MensajeHallazgo({
   hallazgo,
   moneda,
-  confirmada = false,
+  confirmacion = "pendiente",
 }: PropsHallazgo) {
   const bloqueo = hallazgo.tipo === "bloqueo";
-  const nivel: Nivel = bloqueo ? "error" : confirmada ? "info" : "aviso";
-  const estado = bloqueo
-    ? "Bloqueo"
-    : confirmada
-      ? "Confirmada por la analista"
-      : "Requiere confirmación";
+  const nivel: Nivel = bloqueo ? "error" : confirmacion === "confirmada" ? "info" : "aviso";
+  const estado = bloqueo ? "Bloqueo" : TEXTO_CONFIRMACION[confirmacion];
   return (
     <Tira nivel={nivel} titulo={`${hallazgo.codigo} · ${estado}`}>
       <p>{hallazgo.detalle}</p>
