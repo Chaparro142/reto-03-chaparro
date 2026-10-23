@@ -54,22 +54,9 @@ Thumbs.db
 .AppleDouble
 .LSOverride
 
-# Claude Code
-.claude/skills/**/node_modules
-.claude/plugins
+# Configuración local del asistente de código
+.claude/
 *.mcp.json
-!example.mcp.json
-
-# Supabase
-supabase/.branches
-supabase/.temp
-
-# --- forge ---
-# Forge — commit .forge/manifest.json (forge update needs it), ignore backups
-.forge/backups/
-.claude/logs/
-.forge-eject-backup/
-# --- /forge ---
 
 # Generados por Next/TypeScript
 *.tsbuildinfo
