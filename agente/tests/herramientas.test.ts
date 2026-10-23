@@ -54,7 +54,7 @@ describe("herramientas sobre los 6 casos", () => {
     const ctx = contexto(await proyectoTemporal())
     const r = await parse(oc.construir_payload.execute({ caso: "sol-004" }, ctx))
     const orden = r.data?.orden as { posiciones: Array<{ precio_unitario: number; cantidad: number; unidad: string }> }
-    expect(orden.posiciones[0]).toMatchObject({ precio_unitario: 250000, cantidad: 100, unidad: "H" })
+    expect(orden.posiciones[0]).toMatchObject({ precio_unitario: 250000, cantidad: 100, unidad: "H", descripcion: "Bolsa de 100 horas de arquitectura" })
   })
 
   test("idempotencia: crear dos veces sol-001 devuelve el mismo número", async () => {

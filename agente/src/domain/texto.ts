@@ -44,7 +44,8 @@ export function recortar(texto: string, max: number): string {
   const corte = texto.slice(0, max + 1)
   const espacio = corte.lastIndexOf(" ")
   const base = espacio > max / 2 ? corte.slice(0, espacio) : texto.slice(0, max)
-  return base.replace(/[\s,;:.-]+$/, "")
+  // Sin conectores sueltos al final ("…de arquitectura de" → "…de arquitectura").
+  return base.replace(/[\s,;:.-]+$/, "").replace(/(\s+(de|del|la|las|el|los|para|por|y|e|o|u|en|con|a|al|sin))+$/i, "")
 }
 
 export function formatoMoneda(valor: number, moneda: string): string {
