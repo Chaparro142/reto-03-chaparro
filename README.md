@@ -6,6 +6,7 @@ Agente conversacional que lee el paquete de una solicitud de compra, lo valida c
 
 - **Link de prueba:** https://reto03-oc-front.vercel.app (front en Vercel)
 - **API del agente:** https://reto03-oc-agente.chaparro.workers.dev (Worker en Cloudflare · estado en [`/api/health`](https://reto03-oc-agente.chaparro.workers.dev/api/health))
+- **Clave de acceso:** el chat del link de prueba no pide clave. La API directa del Worker sí exige el encabezado `x-access-key` (excepto `/api/health`); la clave se entrega aparte si se quiere probar la API sin el front.
 - **Planteamiento de la solución:** [SOLUCION.md](SOLUCION.md)
 
 ## Estructura
