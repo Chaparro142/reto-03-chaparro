@@ -21,24 +21,21 @@ El navegador nunca habla directo con el Worker. El front expone `/api/agente/*` 
 
 Requisitos: [Bun](https://bun.sh) 1.x y Node 20 o superior.
 
+1. Instala todo. El `postinstall` de la raíz instala también `agente/`.
+
 ```bash
 bun install
-cd agente && bun install && cd ..
 ```
 
-1. **Agente** (puerto 8787). Copia `agente/.env.example` a `agente/.dev.vars` y pon tu `OPENROUTER_API_KEY`.
+2. Copia `agente/.env.example` a `agente/.dev.vars` y pon tu `OPENROUTER_API_KEY`. El archivo `.env.local` del front es opcional en local: sin `AGENTE_URL`, el front usa `http://localhost:8787`.
 
-```bash
-cd agente && bun run dev
-```
-
-2. **Front** (puerto 3000). Copia `.env.local.example` a `.env.local` y pon `AGENTE_URL=http://localhost:8787`.
+3. Levanta agente y front con un solo comando:
 
 ```bash
 bun run dev
 ```
 
-Abre http://localhost:3000.
+Arranca el Worker en el puerto 8787 y el front en el 3000. Si uno de los dos se cae, se cierra el otro, y Ctrl+C cierra ambos. Abre http://localhost:3000.
 
 > Sin Worker ni clave puedes ver la interfaz con `DEMO_MOCK=1` en `.env.local`: el front simula el flujo de `sol-004`. Este modo se ignora en Vercel.
 
@@ -46,7 +43,7 @@ Abre http://localhost:3000.
 
 | Variable            | Obligatoria                     | Uso                                                                               |
 | ------------------- | ------------------------------- | --------------------------------------------------------------------------------- |
-| `AGENTE_URL`        | Sí                              | URL base del Worker, sin barra final.                                             |
+| `AGENTE_URL`        | En Vercel                       | URL base del Worker, sin barra final.                                             |
 | `AGENTE_ACCESS_KEY` | Si el Worker tiene `ACCESS_KEY` | Se envía como `x-access-key` desde el servidor de Next. Nunca llega al navegador. |
 | `DEMO_MOCK`         | No                              | `1` activa el simulador local. Se ignora en Vercel.                               |
 
@@ -75,6 +72,7 @@ El chat muestra cada llamada a herramienta, resalta en ámbar la pregunta de con
 
 | Comando             | Qué hace                                  |
 | ------------------- | ----------------------------------------- |
-| `bun run dev`       | Servidor de desarrollo en el puerto 3000. |
+| `bun run dev`       | Agente (8787) y front (3000) a la vez.    |
+| `bun run dev:front` | Solo el front en el puerto 3000.          |
 | `bun run build`     | Compilación de producción.                |
 | `bun run typecheck` | Revisión de tipos.                        |

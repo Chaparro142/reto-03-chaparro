@@ -30,7 +30,11 @@ async function reenviar(req: Request, { params }: Contexto): Promise<Response> {
     return respuestaMock(req.method, subruta, cuerpo);
   }
 
-  const base = process.env.AGENTE_URL?.replace(/\/+$/, "");
+  // En local, sin AGENTE_URL se usa el Worker de `wrangler dev`. En Vercel la variable es obligatoria.
+  const porDefecto = process.env.VERCEL_ENV
+    ? undefined
+    : "http://localhost:8787";
+  const base = (process.env.AGENTE_URL || porDefecto)?.replace(/\/+$/, "");
   if (!base) {
     return json(503, {
       error: "El front no tiene configurada la URL del agente (AGENTE_URL).",
