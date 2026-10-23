@@ -19,7 +19,16 @@ export function cifra(valor: number): string {
 }
 
 export function fechaCorta(iso: string): string {
-  const d = new Date(iso);
+  // "2026-08-26" sin hora: JavaScript lo toma como medianoche UTC y en Colombia (UTC-5)
+  // mostraría el día anterior. Se arma la fecha local con año, mes y día tal cual.
+  const soloFecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const d = soloFecha
+    ? new Date(
+        Number(soloFecha[1]),
+        Number(soloFecha[2]) - 1,
+        Number(soloFecha[3]),
+      )
+    : new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("es-CO", {
     day: "2-digit",
