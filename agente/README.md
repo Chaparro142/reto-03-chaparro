@@ -62,6 +62,12 @@ npx wrangler deploy
 npx wrangler secret put OPENROUTER_API_KEY
 ```
 
+Antes de una demo, para dejar `out/` vacío en producción (requiere el secreto `ADMIN_KEY`; el script lo pide por teclado):
+
+```bash
+bun run reiniciar
+```
+
 `wrangler deploy` ejecuta primero `scripts/embeber.ts`: el Worker no tiene sistema de archivos, así que los fixtures, el prompt y el conocimiento viajan dentro del bundle. Las salidas (`out/`) y las sesiones viven en un Durable Object con SQLite.
 
 ## API

@@ -11,7 +11,8 @@
     "demo": "bun run demo.ts",
     "test": "bun test",
     "typecheck": "bun scripts/embeber.ts && tsc --noEmit",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "reiniciar": "bun scripts/reiniciar.ts"
   },
   "dependencies": {
     "pdf-lib": "1.17.1",
