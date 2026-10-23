@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "reto03-oc-agente",
+  "main": "src/server/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  // Antes de dev y deploy se embeben fixtures, prompt y conocimiento (el Worker no tiene sistema de archivos).
+  "build": { "command": "bun scripts/embeber.ts" },
+  "durable_objects": {
+    "bindings": [{ "name": "ALMACEN", "class_name": "Almacen" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Almacen"] }],
+  "vars": {
+    "LLM_PROVIDER": "openrouter",
+    "LLM_MODEL": "anthropic/claude-haiku-5.5",
+    "LLM_TIMEOUT_MS": "25000",
+    "MAX_DURACION_TURNO_MS": "30000",
+    "MAX_ITERACIONES": "25",
+    "MAX_TOKENS_SESION": "300000",
+    "MAX_TOKENS_DIA": "3000000",
+    "MAX_COSTO_USD": "5",
+    "MAX_CARACTERES_MENSAJE": "4000",
+    "ALLOWED_ORIGINS": "http://localhost:3000,https://*.vercel.app"
+  }
+  // Secretos (npx wrangler secret put <NOMBRE>): OPENROUTER_API_KEY (obligatorio), ACCESS_KEY y ADMIN_KEY (opcionales).
+}
