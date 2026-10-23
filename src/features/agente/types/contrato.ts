@@ -15,7 +15,7 @@ export type ChatRespuesta = {
   pendientes: string[]
   casos: string[]
   error: string | null
-  tokens: { turno: number; sesion: number }
+  tokens: { turno: number; sesion: number; costo_usd_turno?: number }
 }
 
 export type TurnoUsuario = { rol: 'usuario'; texto: string; ts: string }
@@ -27,6 +27,8 @@ export type TurnoAgente = {
   needsConfirmation: boolean
   error: string | null
   ts: string
+  /** Solo en turnos recibidos en esta pestaña; el historial del servidor no lo trae. */
+  consumo?: { tokens: number; costoUsd?: number }
 }
 
 export type Turno = TurnoUsuario | TurnoAgente

@@ -38,6 +38,7 @@ function turnoDeRespuesta(r: ChatRespuesta): TurnoAgente {
     needsConfirmation: r.needsConfirmation,
     error: r.error,
     ts: ahora(),
+    consumo: { tokens: r.tokens.turno, costoUsd: r.tokens.costo_usd_turno },
   };
 }
 

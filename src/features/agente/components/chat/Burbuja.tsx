@@ -1,5 +1,5 @@
 import type { Turno } from '../../types/contrato'
-import { hora } from '../../utils/formato'
+import { cifra, hora } from '../../utils/formato'
 import { Markdown } from './Markdown'
 import { TarjetaHerramienta } from './TarjetaHerramienta'
 
@@ -57,7 +57,16 @@ export function Burbuja({ turno, esUltimo }: { turno: Turno; esUltimo: boolean }
         </div>
       )}
 
-      <p className="text-[11px] text-texto-3">{hora(turno.ts)}</p>
+      <p className="text-[11px] text-texto-3">
+        {hora(turno.ts)}
+        {turno.consumo && turno.consumo.tokens > 0 && (
+          <span title="Consumo del modelo en este turno">
+            {' · '}
+            {cifra(turno.consumo.tokens)} tokens
+            {turno.consumo.costoUsd !== undefined && ` · US$ ${turno.consumo.costoUsd.toFixed(4)}`}
+          </span>
+        )}
+      </p>
     </div>
   )
 }
