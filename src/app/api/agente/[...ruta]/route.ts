@@ -1,10 +1,10 @@
 import { respuestaMock } from '@/features/agente/mock/respuestas'
 
-// El turno del agente puede encadenar varias llamadas al modelo.
-export const maxDuration = 60
+// Un turno del agente dura como máximo ~55 s (presupuesto del Worker); se deja margen para la red.
+export const maxDuration = 90
 export const dynamic = 'force-dynamic'
 
-const TIMEOUT_MS = 58_000
+const TIMEOUT_MS = 80_000
 const RUTA_VALIDA = /^[A-Za-z0-9._\-/]+$/
 
 type Contexto = { params: Promise<{ ruta: string[] }> }
