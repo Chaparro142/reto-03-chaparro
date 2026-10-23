@@ -1,4 +1,4 @@
-// Tipos del contrato entre el front y el agente. Fuente: agente/CONTRATO-API.md.
+// Tipos del contrato entre el front y el agente. Fuente: CONTRATO-API.md.
 
 export type ToolCall = {
   nombre: string

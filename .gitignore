@@ -1,5 +1,5 @@
 # Dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 yarn.lock
@@ -7,16 +7,15 @@ package-lock.json
 pnpm-lock.yaml
 
 # Testing
-/coverage
+coverage/
 
-# Next.js
-/.next/
-/out/
+# Next.js (web/)
+.next/
 *.rsc
 
 # Production
-/build
-/dist
+build/
+dist/
 
 # Misc
 .DS_Store
@@ -65,3 +64,9 @@ next-env.d.ts
 .env*
 !.env.example
 !.env.local.example
+
+# Agente (raíz)
+/out/
+.wrangler/
+.dev.vars
+src/store/embebidos.generated.ts

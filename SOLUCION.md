@@ -77,17 +77,17 @@ La analista de Compras digita a mano cada OC en SAP y valida "de memoria" que el
 | --------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Front                 | Vercel                               | Next.js 16, React 19 y Tailwind. Chat y panel de la OC. No tiene datos propios: todo sale de la API.                                                                                                                                               |
 | Puente entre dominios | Vercel, ruta `/api/agente/[...ruta]` | Reenvía cada llamada al Worker desde el servidor. El navegador nunca ve la URL con clave ni la clave de acceso, y no hace falta CORS. Corta a 80 s con un error legible (`maxDuration` 90 s); un turno del agente dura como máximo ~55 s.                                                                           |
-| Agente y API          | Cloudflare Workers                   | `agente/src/server/worker.ts`. Los fixtures, el prompt y el conocimiento se embeben al compilar, porque el Worker no tiene sistema de archivos.                                                                                                    |
+| Agente y API          | Cloudflare Workers                   | `src/server/worker.ts`. Los fixtures, el prompt y el conocimiento se embeben al compilar, porque el Worker no tiene sistema de archivos.                                                                                                    |
 | Estado entre turnos   | Durable Object único con SQLite      | Implementa la interfaz `Store`: guarda sesiones, archivos de `out/`, líneas de `log.jsonl` y `control.csv`, y el contador de OC. Una sola instancia serializa las escrituras, así la numeración y la idempotencia son consistentes entre sesiones. |
 | Modelo                | OpenRouter                           | La clave es un secreto del Worker (`wrangler secret put`). Nunca está en el front, en el repositorio ni en los logs.                                                                                                                               |
 
-**En local** se levantan los dos procesos: `bun run dev` dentro de `agente/` (Worker en el puerto 8787 con `wrangler dev`, que simula el Durable Object) y `bun run dev` en la raíz (front en el puerto 3000 con `AGENTE_URL=http://localhost:8787`). `demo.ts` y los tests usan el `Store` de archivos y no necesitan ninguno de los dos.
+**En local** un solo comando, `bun run dev` en la raíz, levanta los dos procesos: el Worker en el puerto 8787 con `wrangler dev`, que simula el Durable Object, y el front de `web/` en el puerto 3000 apuntando a `http://localhost:8787`. `demo.ts` y los tests usan el `Store` de archivos y no necesitan ninguno de los dos.
 
 | Pieza              | Dónde vive                        | Qué contiene                                                                                            |
 | ------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Comportamiento** | `agente/agent/prompt.md`          | Reglas del agente: no afirmar valores fuera de herramientas, no crear sin confirmación, cómo responder. |
-| **Conocimiento**   | `agente/src/knowledge/ordenes-compra.md` | Matriz de controles, criterios de negocio, datos fijos de la OC, archivos que produce.                  |
-| **Ejecución**      | `agente/src/tools/oc.ts` + `agente/src/domain/` | Lectura, validación, construcción, evidencia y creación. Única fuente de valores.                       |
+| **Comportamiento** | `agent/prompt.md`                 | Reglas del agente: no afirmar valores fuera de herramientas, no crear sin confirmación, cómo responder. |
+| **Conocimiento**   | `src/knowledge/ordenes-compra.md` | Matriz de controles, criterios de negocio, datos fijos de la OC, archivos que produce.                  |
+| **Ejecución**      | `src/tools/oc.ts` + `src/domain/` | Lectura, validación, construcción, evidencia y creación. Única fuente de valores.                       |
 
 El system prompt es `prompt.md` + el conocimiento. Cambiar una regla de negocio (por ejemplo, la tolerancia de RC5) toca `src/domain/validacion.ts` y el conocimiento, nunca el servidor.
 
@@ -97,7 +97,7 @@ El system prompt es `prompt.md` + el conocimiento. Cambiar una regla de negocio 
 
 ## 3. Ciclo del agente
 
-`agente/src/agent/ciclo.ts` (~130 líneas):
+`src/agent/ciclo.ts` (~130 líneas):
 
 1. Agrega el mensaje del usuario al historial de la sesión.
 2. Llama al modelo con el system prompt, el historial y el JSON Schema de las herramientas (generado desde zod con `z.toJSONSchema`, una sola fuente de verdad).

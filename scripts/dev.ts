@@ -1,31 +1,31 @@
 // Un solo comando para desarrollo local (PRD §8): `bun run dev` en la raíz levanta
-// el Worker del agente (wrangler dev, puerto 8787) y el front de Next (puerto 3000).
+// el Worker del agente (wrangler dev, puerto 8787) y el front de Next en web/ (puerto 3000).
 // Si uno de los dos termina, se cierra el otro. Ctrl+C cierra ambos.
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 const raiz = join(import.meta.dir, "..");
-const carpetaAgente = join(raiz, "agente");
+const carpetaWeb = join(raiz, "web");
 
-if (!existsSync(join(carpetaAgente, "package.json"))) {
+if (!existsSync(join(carpetaWeb, "package.json"))) {
   console.error(
-    "No encuentro agente/package.json. Ejecuta este comando desde la raíz del repositorio.",
+    "No encuentro web/package.json. Ejecuta este comando desde la raíz del repositorio.",
   );
   process.exit(1);
 }
-if (!existsSync(join(carpetaAgente, ".dev.vars"))) {
+if (!existsSync(join(raiz, ".dev.vars"))) {
   console.warn(
-    "Aviso: falta agente/.dev.vars. El agente arranca, pero sin OPENROUTER_API_KEY no podrá conversar.",
+    "Aviso: falta .dev.vars. El agente arranca, pero sin OPENROUTER_API_KEY no podrá conversar.",
   );
 }
 
 const procesos = [
-  Bun.spawn(["bun", "run", "dev"], {
-    cwd: carpetaAgente,
+  Bun.spawn(["bun", "run", "dev:agente"], {
+    cwd: raiz,
     stdio: ["inherit", "inherit", "inherit"],
   }),
-  Bun.spawn(["bun", "run", "dev:front"], {
-    cwd: raiz,
+  Bun.spawn(["bun", "run", "dev"], {
+    cwd: carpetaWeb,
     stdio: ["inherit", "inherit", "inherit"],
   }),
 ];

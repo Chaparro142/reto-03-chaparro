@@ -1,7 +1,7 @@
-// SOLO DESARROLLO LOCAL. Simula el Worker del agente siguiendo agente/CONTRATO-API.md
+// SOLO DESARROLLO LOCAL. Simula el Worker del agente siguiendo CONTRATO-API.md
 // para construir la interfaz mientras el agente real no está desplegado.
 // El proxy lo rechaza en Vercel (VERCEL_ENV), así que la demo nunca muestra estos datos.
-// Valores tomados de agente/fixtures/reto-03/solicitudes/sol-004 y de los maestros.
+// Valores tomados de fixtures/reto-03/solicitudes/sol-004 y de los maestros.
 
 import type {
   ChatRespuesta,

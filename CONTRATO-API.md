@@ -1,6 +1,6 @@
 # Contrato de la API del agente · Reto 03
 
-Fuente de verdad entre el agente (Cloudflare Worker, carpeta `agente/`) y el front (Next.js en Vercel, raíz del repo). Cualquier cambio se acuerda entre los dos frentes.
+Fuente de verdad entre el agente (Cloudflare Worker, raíz del repo) y el front (Next.js en Vercel, carpeta `web/`). Cualquier cambio se acuerda entre los dos frentes.
 
 - **URL base local:** `http://localhost:8787`
 - **URL base en producción:** se publica al desplegar (`https://reto03-oc-agente.<cuenta>.workers.dev`). El front no la llama desde el navegador: su proxy `/api/agente/*` (servidor de Next) la lee de `AGENTE_URL` y agrega `x-access-key` desde `AGENTE_ACCESS_KEY`.

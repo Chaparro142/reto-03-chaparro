@@ -1,7 +1,7 @@
 /**
  * Deja out/ vacío en producción (POST /api/reset) antes de una demo.
  * Pide la ADMIN_KEY y la ACCESS_KEY por teclado: nunca quedan en el código ni en el historial de comandos.
- * Uso: bun run reiniciar  (dentro de agente/)
+ * Uso: bun run reiniciar  (en la raíz del repositorio)
  */
 const URL_AGENTE =
   process.env.AGENTE_URL ?? "https://reto03-oc-agente.chaparro.workers.dev";
