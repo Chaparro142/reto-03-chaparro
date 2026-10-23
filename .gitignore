@@ -74,3 +74,5 @@ supabase/.temp
 # Generados por Next/TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+.env*
